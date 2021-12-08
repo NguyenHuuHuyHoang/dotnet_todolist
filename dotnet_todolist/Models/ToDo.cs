@@ -3,8 +3,15 @@
     public class ToDo
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public int StatusId { get; set; }
+        public Boolean isCompleted { get; set; }
+        public DateTime UpdateAt { get; set; }
+
+        public DateTime CreateAt { get; set; }
+
+        public Boolean SoftDelete { get; set; }
+
+        public String Content { get; set; }
+
 
     }
 }
