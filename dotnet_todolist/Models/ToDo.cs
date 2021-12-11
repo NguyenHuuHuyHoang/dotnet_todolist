@@ -1,16 +1,23 @@
-﻿namespace dotnet_todolist.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace dotnet_todolist.Models
 {
     public class ToDo
     {
         public int Id { get; set; }
-        public Boolean isCompleted { get; set; }
+
+        public int StatusId { get; set; }
         public DateTime UpdateAt { get; set; }
 
         public DateTime CreateAt { get; set; }
+    
+        public string Name { get; set; }
 
-        public Boolean SoftDelete { get; set; }
+        public DateTime EndDate { get; set; }
 
-        public String Content { get; set; }
+        public int GroupId { get; set; }
+        public int AccountId { get; set; }
+
 
 
     }
