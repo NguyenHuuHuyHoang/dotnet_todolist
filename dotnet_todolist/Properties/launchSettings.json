@@ -8,6 +8,10 @@
       "sslPort": 44371
     }
   },
+  "env": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "ASPNETCORE_URLS": "http://localhost:3000"
+  },
   "profiles": {
     "dotnet_todolist": {
       "commandName": "Project",

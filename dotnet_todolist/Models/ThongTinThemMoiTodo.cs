@@ -9,6 +9,6 @@
         public DateTime EndDate { get; set; }
 
         public int GroupId { get; set; }
-        public int AccountId { get; set; }
+        
     }
 }

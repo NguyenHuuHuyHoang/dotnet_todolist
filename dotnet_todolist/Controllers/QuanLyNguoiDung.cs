@@ -1,4 +1,5 @@
 ﻿using Dapper;
+using dotnet_todolist.DAO;
 using dotnet_todolist.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,75 +19,43 @@ namespace dotnet_todolist.Controllers
         }
 
 
-        //GET api/<QuanLyNguoiDung>/LayDanhSachNguoiDung
+        //GET api/<QuanLyNguoiDung>/LayDanhSachNguoiDung - OK
         [Route("LayDanhSachNguoiDung")]
         [HttpGet]
         public async Task<IActionResult> LayDanhSachNguoiDung()
         {
             try
-            {
-                using (var conn = new SqlConnection(_connectionString))
-                {
+            {  
+                var result = await AccountDAO.getAll(_connectionString);
 
-                    if (conn.State == System.Data.ConnectionState.Closed)
-                    {
-                        conn.Open();
-                    }
+                return StatusCode(StatusCodes.Status200OK, result);
 
-                    var userResult = await conn.QueryAsync<Account>("Get_Accounts", null, null, null, System.Data.CommandType.StoredProcedure);
-
-                    return StatusCode(StatusCodes.Status200OK, userResult);
-
-                }
             } catch (Exception)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi server");
             }
-
         }
 
 
-        // POST api/<QuanLyNguoiDung>/DangKy
+        // POST api/<QuanLyNguoiDung>/DangKy - OK
         [Route("DangKy")]
         [HttpPost]
-        public async Task<IActionResult> DangKy([FromBody] Account account)
+        public async Task<IActionResult> DangKy([FromBody] ThongTinDangKyAccount account)
         {
 
             try
             {
-                int newId = 0;
-
-                using (var conn = new SqlConnection(_connectionString))
+                if ((await AccountDAO.getByEmail(_connectionString, account.Email)) != null)
                 {
-                    var parameters = new DynamicParameters();
-                    parameters.Add("@email", account.Email);
-
-
-                    if (conn.State == System.Data.ConnectionState.Closed)
-                    {
-                        conn.Open();
-                    }
-
-                    var userResult = await conn.QueryAsync<Account>("Get_Account_ByEmail", parameters, null, null, System.Data.CommandType.StoredProcedure);
-
-                    if (userResult.FirstOrDefault() != null)
-                    {
-                        return StatusCode(StatusCodes.Status400BadRequest, "Email đã tồn tại");
-                    }
-
-                    parameters.Add("@fullName", account.FullName);
-                    parameters.Add("@password", account.Password);
-                    parameters.Add("@phone", account.Phone);
-                    parameters.Add("@id", dbType: System.Data.DbType.Int32, direction: System.Data.ParameterDirection.Output);
-
-
-                    var result = await conn.ExecuteAsync("Create_Account", parameters, null, null, System.Data.CommandType.StoredProcedure);
-
-                    newId = parameters.Get<int>("@id");
-
+                    return StatusCode(StatusCodes.Status400BadRequest, "Tài khoản đã tồn tại");
                 }
+                else
+                {
+                    int newId = 0;
+                    newId = await AccountDAO.create(_connectionString, account);
 
-                return StatusCode(StatusCodes.Status201Created, new {newId = newId});
+                    return StatusCode(StatusCodes.Status201Created, new { newId = newId });
+                }
             }
             catch (Exception)
             {
@@ -96,7 +65,7 @@ namespace dotnet_todolist.Controllers
         }
 
 
-        // POST api/<QuanLyNguoiDung>/DangNhap
+        // POST api/<QuanLyNguoiDung>/DangNhap - CHƯA XỬ LÝ
         [Route("DangNhap")]
         [HttpPost]
         public async Task<IActionResult> DangNhap([FromBody] ThongTinDangNhap account)
@@ -135,7 +104,7 @@ namespace dotnet_todolist.Controllers
  
         }
 
-        // PUT api/<QuanLyNguoiDung>/CapNhatThongTinNguoiDung
+        // PUT api/<QuanLyNguoiDung>/CapNhatThongTinNguoiDung CHƯA XỬ LÝ
         [Route("CapNhatThongTinNguoiDung")]
         [HttpPut]
         public async Task<IActionResult> CapNhatThongTinNguoiDung([FromBody] Account account)
@@ -181,7 +150,7 @@ namespace dotnet_todolist.Controllers
         }
 
 
-        //DELETE api/<QuanLyNguoiDung>/XoaNguoiDung
+        //DELETE api/<QuanLyNguoiDung>/XoaNguoiDung - OK
         [Route("XoaNguoiDung")]
         [HttpDelete]
 
@@ -189,28 +158,21 @@ namespace dotnet_todolist.Controllers
         {
             try
             {
-                using (var conn = new SqlConnection(_connectionString))
+                if ((await AccountDAO.getByEmail(_connectionString, email)) != null)
                 {
-                    var parameters = new DynamicParameters();
-                    parameters.Add("@email", email);
-
-
-                    if (conn.State == System.Data.ConnectionState.Closed)
+                    if (await AccountDAO.delete(_connectionString,email))
                     {
-                        conn.Open();
-                    }
-
-                    var result = await conn.QueryAsync<Account>("Get_Account_ByEmail", parameters, null, null, System.Data.CommandType.StoredProcedure);
-
-                    if (result.FirstOrDefault() != null)
-                    {
-                        await conn.ExecuteAsync("Delete_Account_ByEmail", parameters, null, null, System.Data.CommandType.StoredProcedure);
                         return StatusCode(StatusCodes.Status202Accepted, "Xóa tài khoản thành công");
-                    }
-                    else
+                    } else
                     {
-                        return StatusCode(StatusCodes.Status400BadRequest, "Tài khoản không tồn tại");
+                        return StatusCode(StatusCodes.Status500InternalServerError, "Xóa thất bại");
                     }
+                    
+                    
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, "Tài khoản không tồn tại");
                 }
             } catch (Exception)
             {

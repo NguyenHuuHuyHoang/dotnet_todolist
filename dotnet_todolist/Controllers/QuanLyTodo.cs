@@ -1,4 +1,5 @@
-﻿using dotnet_todolist.Models;
+﻿using dotnet_todolist.DAO;
+using dotnet_todolist.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,21 +9,50 @@ namespace dotnet_todolist.Controllers
     [ApiController]
     public class QuanLyTodo : ControllerBase
     {
+        private readonly string _connectionString;
+        public QuanLyTodo(IConfiguration configuration)
+        {
+            _connectionString = configuration.GetConnectionString("DbConnectionString");
+        }
+
         // GET: api/<QuanLyTodo>/LayDanhSachTodoTheoNhom
         [Route("LayDanhSachTodoTheoNhom")]
         [HttpGet]
-        public IEnumerable<string> LayDanhSachTodoTheoNhom()
+        public async Task<IActionResult> LayDanhSachTodoTheoNhom(int groupId)
         {
-            return new string[] { "value1", "value2" };
+            try
+            {
+                var result = await TodoDAO.getTodoByGroupId(_connectionString, groupId);
+                return StatusCode(StatusCodes.Status200OK, result);
+
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi kết nối server");
+            }
         }
 
         // POST: api/<QuanLyTodo>/ThemTodoMoi
         [Route("ThemTodoMoi")]
         [HttpPost]
 
-        public IActionResult ThemTodoMoi(ToDo todo)
+        public async Task<IActionResult> ThemTodoMoi(ThongTinThemMoiTodo data)
         {
-            return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi kết nối server");
+            try
+            {
+                int newTodoId = await TodoDAO.createByGroupdId(_connectionString, data);
+
+                int accountId = await GroupDAO.getAccountIdByGroupId(_connectionString, data.GroupId);
+
+                await Account_TodoDAO.addAccountToTodo(_connectionString, accountId, newTodoId);
+
+                return StatusCode(StatusCodes.Status201Created, new {id = newTodoId});
+            }
+             catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Lỗi kết nối server");
+            }
+           
         }
 
         // POST: api/<QuanLyTodo>/ThemNguoiThucHienTodo
